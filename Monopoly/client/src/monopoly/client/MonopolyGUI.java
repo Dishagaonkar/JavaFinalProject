@@ -1,24 +1,35 @@
 package monopoly.client;
 
 import monopoly.client.ClientConnection;
-import monopoly.net.*;
-import monopoly.model.*;
+
+import monopoly.model.BoardSpace;
+import monopoly.model.MonopolyBoard;
+import monopoly.model.Player;
+import monopoly.model.Property;
+
+import monopoly.net.GameStatePush;
+import monopoly.net.JoinGameReq;
+import monopoly.net.Message;
+import monopoly.net.RollDiceReq;
 
 import javax.swing.*;
-import java.awt.*;                     // still fine
-import java.util.List;                 // explicit, no wildcard
+import javax.swing.border.LineBorder;
+import java.awt.*;
+import java.util.List;
 import java.util.ArrayList;
 
 /** Swing front-end for the networked Monopoly game. */
 public class MonopolyGUI extends JFrame {
 
     private MonopolyBoard board;
-    private List<Player>  players = List.of();          // now unambiguous
-    private final JTextArea log  = new JTextArea();
-    private final List<JButton> btns = new ArrayList<>();   // ditto
+    private List<Player>  players = List.of();
+
+    private final JTextArea log   = new JTextArea();
+    private final List<JButton> btns = new ArrayList<>();
+
     private final ClientConnection conn;
 
-    // -------------------------------------------------------------
+    /* ------------------------------------------------------------------ */
 
     public MonopolyGUI(String name, String host, int port) throws Exception {
         conn = new ClientConnection(host, port, this::handle);
@@ -29,14 +40,14 @@ public class MonopolyGUI extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // board layout identical to previous version
+        /* Board edge panels */
         JPanel north = new JPanel(new GridLayout(1, 10));
         JPanel south = new JPanel(new GridLayout(1, 10));
         JPanel west  = new JPanel(new GridLayout(10, 1));
         JPanel east  = new JPanel(new GridLayout(10, 1));
 
         for (int i = 20; i <= 29; i++) btns.add(addButton(north));
-        for (int i = 9;  i >=  0; i--) btns.add(addButton(south));
+        for (int i =  9; i >=  0; i--) btns.add(addButton(south));
         for (int i = 19; i >= 10; i--) btns.add(addButton(west));
         for (int i = 30; i <= 39; i++) btns.add(addButton(east));
 
@@ -54,7 +65,7 @@ public class MonopolyGUI extends JFrame {
         setVisible(true);
     }
 
-    // -------------------------------------------------------------
+    /* ------------------------------------------------------------------ */
 
     private JButton addButton(JPanel parent) {
         JButton b = new JButton();
@@ -74,33 +85,71 @@ public class MonopolyGUI extends JFrame {
         }
     }
 
+    /* ------------------------------------------------------------------ */
+    /*  Draw board with coloured property bands & player highlights       */
+    /* ------------------------------------------------------------------ */
+
     private void drawBoard() {
         if (board == null) return;
+
+        // palette for player highlights (extend if >6 players)
+        Color[] pawnColors = {
+            Color.ORANGE, Color.CYAN, Color.PINK,
+            Color.GREEN,  Color.MAGENTA, Color.YELLOW
+        };
+
         for (int i = 0; i < board.getBoard().size(); i++) {
-            JButton     btn = btns.get(i);
-            BoardSpace space = board.getBoard().get(i);
+            final int pos = i;                 // capture once for lambda
 
-            StringBuilder lbl = new StringBuilder("<html><center>")
-                    .append(space.getName());
+            JButton    btn  = btns.get(i);
+            BoardSpace sq   = board.getBoard().get(i);
 
-            if (space instanceof Property prop && prop.isOwned()) {
-                lbl.append("<br>Owner: ").append(prop.getOwner().getName());
+            /* ----- label HTML ----- */
+            StringBuilder html = new StringBuilder("<html><center>")
+                                     .append(sq.getName());
+
+            /* ----- property border band & owner ----- */
+            if (sq instanceof Property p && p.getColorGroup() != null) {
+                btn.setBorder(new LineBorder(p.getColorGroup(), 4));
+                btn.setBorderPainted(true);
+                btn.setContentAreaFilled(true);
+                btn.setOpaque(true);
+                btn.setBackground(Color.WHITE);
+
+                if (p.isOwned())
+                    html.append("<br>Owner: ").append(p.getOwner().getName());
+            } else {
+                btn.setBorder(UIManager.getBorder("Button.border"));
+                btn.setBackground(null);
             }
 
-            for (Player p : players)
-                if (p.getPosition() == i)
-                    lbl.append("<br><b>").append(p.getName()).append("</b>");
+            /* ----- add players on this square ----- */
+            boolean someoneHere = false;
+            for (Player pl : players) {
+                if (pl.getPosition() == pos) {
+                    someoneHere = true;
+                    html.append("<br><b>").append(pl.getName()).append("</b>");
+                }
+            }
+            if (someoneHere) {
+                int firstIdx = players.stream()
+                                      .filter(p -> p.getPosition() == pos)
+                                      .findFirst()
+                                      .map(players::indexOf)
+                                      .orElse(0);
+                btn.setBackground(pawnColors[firstIdx % pawnColors.length]);
+            }
 
-            btn.setText(lbl.append("</center></html>").toString());
+            btn.setText(html.append("</center></html>").toString());
         }
     }
 
-    // -------------------------------------------------------------
+    /* ------------------------------------------------------------------ */
 
     public static void main(String[] args) throws Exception {
         String name = JOptionPane.showInputDialog("Enter player name");
         String host = (args.length > 0) ? args[0] : "localhost";
-        int    port = (args.length > 1) ? Integer.parseInt(args[1]) : 5100; // default to 5100
+        int    port = (args.length > 1) ? Integer.parseInt(args[1]) : 5100;
         new MonopolyGUI(name == null ? "Player" : name, host, port);
     }
 }
