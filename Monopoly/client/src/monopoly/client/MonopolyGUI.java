@@ -26,7 +26,7 @@ public class MonopolyGUI extends JFrame {
     private MonopolyBoard board;
     private List<Player>  players = List.of();
 
-    /* ───── UI ───── */
+    /* ───── UI widgets ───── */
     private final JTextArea log   = new JTextArea();
     private final JTextArea stats = new JTextArea(5, 14);
     private final List<JButton> btns = new ArrayList<>();
@@ -46,7 +46,6 @@ public class MonopolyGUI extends JFrame {
 
         /* frame basics */
         setTitle("Monopoly – " + name);
-        setSize(950, 720);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -66,18 +65,23 @@ public class MonopolyGUI extends JFrame {
         add(west,  BorderLayout.WEST);
         add(east,  BorderLayout.EAST);
 
-        /* log + sidebar */
-        log.setEditable(false);
-        add(new JScrollPane(log), BorderLayout.CENTER);
-
+        /* ------------ centre area = Roll button + log + stats ------------ */
         stats.setEditable(false);
         stats.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        add(new JScrollPane(stats), BorderLayout.EAST);
+        log.setEditable(false);
 
-        /* roll button */
+        JPanel center   = new JPanel(new BorderLayout());
+        center.add(rollBtn,              BorderLayout.NORTH);
+        center.add(new JScrollPane(log), BorderLayout.CENTER);
+        center.add(new JScrollPane(stats), BorderLayout.EAST);
+
+        add(center, BorderLayout.CENTER);
+
+        /* roll listener */
         rollBtn.addActionListener(e -> conn.send(new RollDiceReq()));
-        add(rollBtn, BorderLayout.PAGE_END);
 
+        pack();          // respect preferred sizes so labels don’t clip
+        setLocationRelativeTo(null);
         setVisible(true);
     }
 
@@ -96,7 +100,7 @@ public class MonopolyGUI extends JFrame {
             players = gs.players();
 
             boolean myTurn =
-                players.get(gs.currentTurn()).getName().equals(myName);
+                  players.get(gs.currentTurn()).getName().equals(myName);
             rollBtn.setEnabled(myTurn);
 
             SwingUtilities.invokeLater(() -> {
@@ -154,7 +158,6 @@ public class MonopolyGUI extends JFrame {
             StringBuilder html = new StringBuilder("<html><center>")
                                      .append(sq.getName());
 
-            /* property border + owner */
             if (sq instanceof Property p && p.getColorGroup() != null) {
                 btn.setBorder(new LineBorder(p.getColorGroup(), 4));
                 btn.setBorderPainted(true);
@@ -169,7 +172,6 @@ public class MonopolyGUI extends JFrame {
                 btn.setBackground(null);
             }
 
-            /* players on this square */
             boolean someoneHere = false;
             for (Player pl : players)
                 if (pl.getPosition() == pos) {
