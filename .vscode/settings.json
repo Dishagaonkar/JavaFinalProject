@@ -1,0 +1,11 @@
+{
+  "java.project.sourcePaths": [
+    "Monopoly\\client\\src",
+    "Monopoly\\server\\src",
+    "client/src",
+    "server/src",
+    "shared/src",
+    "Monopoly\\shared\\src"
+  ],
+  "java.project.referencedLibraries": []
+}
