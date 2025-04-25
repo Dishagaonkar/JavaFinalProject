@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    
+    {
+      "type": "java",
+      "name": "Run Monopoly Client",
+      "request": "launch",
+      "mainClass": "monopoly.client.MonopolyGUI",
+      "projectName": "Monopoly"
+    },
+    {
+      "type": "java",
+      "name": "Run Game Server",
+      "request": "launch",
+      "mainClass": "monopoly.server.GameServer",
+      "projectName": "Monopoly"
+    }
+  ]
+}

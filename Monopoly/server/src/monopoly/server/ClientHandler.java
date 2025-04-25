@@ -1,26 +1,27 @@
 package monopoly.server;
 
 import monopoly.model.Player;
-import monopoly.net.*;                   // Message, JoinGameReq, RollDiceReq, etc.
+import monopoly.net.*;
 
 import java.io.*;
 import java.net.Socket;
 
+/** One thread per connected client. */
 public class ClientHandler implements Runnable {
-    private final Socket       socket;
-    private final GameEngine   engine;
+
+    private final Socket     socket;
+    private final GameEngine engine;
+
     private ObjectOutputStream out;
     private ObjectInputStream  in;
-    private Player             self;
 
-    public ClientHandler(Socket socket, GameEngine engine) {
-        this.socket = socket;
-        this.engine = engine;
+    private Player self;
+
+    public ClientHandler(Socket s, GameEngine e) {
+        socket = s; engine = e;
     }
 
-    /* ---------------------------------------------------------------------- */
-    /*  Main per-client thread                                                */
-    /* ---------------------------------------------------------------------- */
+    /* ─────────────────────────────────────────────────────────────── */
     @Override public void run() {
         try (socket) {
             out = new ObjectOutputStream(socket.getOutputStream());
@@ -30,43 +31,39 @@ public class ClientHandler implements Runnable {
                 Message msg = (Message) in.readObject();
                 handle(msg);
             }
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("Client disconnected: " + e);
+        } catch (IOException | ClassNotFoundException ex) {
+            System.err.println("Client left: " + ex.getMessage());
         }
     }
 
-    /* ---------------------------------------------------------------------- */
-    /*  Handle one inbound message                                            */
-    /* ---------------------------------------------------------------------- */
+    /* ─────────────────────────────────────────────────────────────── */
     private void handle(Message m) throws IOException {
         if (m instanceof JoinGameReq j) {
             self = engine.addPlayer(j.playerName());
-            push(makeState());
+            push(snapshot());
         }
         else if (m instanceof RollDiceReq) {
             engine.rollDice(self);
-            GameServer.broadcast(makeState());
+            GameServer.broadcast(snapshot());
         }
         else if (m instanceof BuyPropertyReq b) {
-            // Optional: implement buy-flow logic here
+            if (engine.buyProperty(self, b.index()))
+                GameServer.broadcast(snapshot());
         }
     }
 
-    /* ---------------------------------------------------------------------- */
-    /*  Helpers the server needs                                              */
-    /* ---------------------------------------------------------------------- */
-    private GameStatePush makeState() {
-        return new GameStatePush(engine.board(), engine.players(), engine.last());
+    /* ─────────────────────────────────────────────────────────────── */
+    private GameStatePush snapshot() {
+        return new GameStatePush(
+                engine.board(),
+                engine.players(),
+                engine.lastEvent(),
+                engine.currentTurn());      // 4-argument ctor
     }
 
-    /** Send a state snapshot only to this client. */
-    public void push(GameStatePush state) {
-        try {
-            out.reset();
-            out.writeObject(state);
-            out.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    /* public so GameServer can call it */
+    public void push(GameStatePush s) {
+        try { out.reset(); out.writeObject(s); out.flush(); }
+        catch (IOException ignored) {}
     }
 }
