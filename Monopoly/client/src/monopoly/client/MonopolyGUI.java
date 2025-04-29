@@ -40,6 +40,7 @@ public class MonopolyGUI extends JFrame {
 
     /* =================================================================== */
     public MonopolyGUI(String name, String host, int port) throws Exception {
+        System.out.println("🟢 MonopolyGUI constructor called");
         this.myName = name;
 
         /* connection */
@@ -89,6 +90,9 @@ public class MonopolyGUI extends JFrame {
 
 
     public MonopolyGUI(String name, String host, int port, ClientConnection conn) throws Exception {
+        
+        System.out.println("🟢 MonopolyGUI 2 constructor called");
+
         this.conn = conn;  // Use the existing, already-authenticated connection
         this.myName = name;
         this.conn.setMessageHandler(this::handle);  // Make sure GUI handles future messages
@@ -225,50 +229,52 @@ public class MonopolyGUI extends JFrame {
             btn.setText(html.append("</center></html>").toString());
         }
     }
-public static void main(String[] args) throws Exception {
-    String username = JOptionPane.showInputDialog("Enter username:");
-    String password = JOptionPane.showInputDialog("Enter password:");
-    String name = JOptionPane.showInputDialog("Enter player name");
-    String host = (args.length > 0) ? args[0] : "localhost";
-    int port = (args.length > 1) ? Integer.parseInt(args[1]) : 5100;
-    ClientConnection[] conn = new ClientConnection[1];  // Trick: use array to make it mutable inside lambda
+// public static void main(String[] args) throws Exception {
+//     String username = JOptionPane.showInputDialog("Enter username:");
+//     String password = JOptionPane.showInputDialog("Enter password:");
+//     String name = JOptionPane.showInputDialog("Enter player name");
+//     String host = (args.length > 0) ? args[0] : "localhost";
+//     int port = (args.length > 1) ? Integer.parseInt(args[1]) : 5100;
+//     ClientConnection[] conn = new ClientConnection[1];  // Trick: use array to make it mutable inside lambda
 
-conn[0] = new ClientConnection(host, port, message -> {
-    if (message instanceof LoginRes res) {
-        if (!res.isSuccess()) {
-            JOptionPane.showMessageDialog(null, "❌ Login failed. Exiting.");
-            System.exit(1);
-        } else {
-            System.out.println("✅ Login successful.");
-            try {
-                conn[0].send(new JoinGameReq(name));
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        new MonopolyGUI(name == null ? "Player" : name, host, port, conn[0]);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-});
+// conn[0] = new ClientConnection(host, port, message -> {
+//     if (message instanceof LoginRes res) {
+//         if (!res.isSuccess()) {
+//             JOptionPane.showMessageDialog(null, "⚠️ Login failed. Starting game anyway.");
+//             // JOptionPane.showMessageDialog(null, "❌ Login failed. Exiting.");
+//             // System.exit(1);
+//         } else {
+//             System.out.println("✅ Login successful.");
+//             try {
+//                 conn[0].send(new JoinGameReq(name));
+//                 SwingUtilities.invokeLater(() -> {
+//                     try {
+//                         MonopolyGUI gui = new MonopolyGUI(name == null ? "Player" : name, host, port, conn[0]);
+//                         conn[0].setMessageHandler(gui::handle);  // ✅ update the message handler to point to GUI
+//                     } catch (Exception e) {
+//                         e.printStackTrace();
+//                     }
+//                 });
+//             } catch (Exception e) {
+//                 e.printStackTrace();
+//             }
+//         }
+//     }
+// });
 
-conn[0].send(new LoginReq(username, password));
+// conn[0].send(new LoginReq(username, password));
 
 
 
-}
+// }
 
     /* =================================================================== */
-    // public static void main(String[] args) throws Exception {
-    //     String username = JOptionPane.showInputDialog("Enter username:");
-    //     String password = JOptionPane.showInputDialog("Enter password:");
-    //     String name = JOptionPane.showInputDialog("Enter player name");
-    //     String host = (args.length > 0) ? args[0] : "localhost";
-    //     int    port = (args.length > 1) ? Integer.parseInt(args[1]) : 5100;
-    //     new MonopolyGUI(name == null ? "Player" : name, host, port);
-    // }
+    public static void main(String[] args) throws Exception {
+        String username = JOptionPane.showInputDialog("Enter username:");
+        String password = JOptionPane.showInputDialog("Enter password:");
+        String name = JOptionPane.showInputDialog("Enter player name");
+        String host = (args.length > 0) ? args[0] : "localhost";
+        int    port = (args.length > 1) ? Integer.parseInt(args[1]) : 5100;
+        new MonopolyGUI(name == null ? "Player" : name, host, port);
+    }
 }
