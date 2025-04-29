@@ -1,6 +1,7 @@
 package monopoly.server;
 
 import monopoly.net.GameStatePush;
+import monopoly.db.DatabaseManager;
 
 import java.net.*;
 import java.util.*;
@@ -17,6 +18,7 @@ public class GameServer {
     }
 
     public static void main(String[] args) throws Exception {
+        DatabaseManager.initializeDatabase();
         int port = 5100;
         GameEngine engine = new GameEngine();
 
