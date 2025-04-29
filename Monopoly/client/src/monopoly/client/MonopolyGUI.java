@@ -10,6 +10,8 @@ import monopoly.model.Property;
 import monopoly.net.BuyPropertyReq;
 import monopoly.net.GameStatePush;
 import monopoly.net.JoinGameReq;
+import monopoly.net.LoginReq;
+import monopoly.net.LoginRes;
 import monopoly.net.Message;
 import monopoly.net.RollDiceReq;
 
@@ -33,11 +35,12 @@ public class MonopolyGUI extends JFrame {
     private final JButton rollBtn = new JButton("Roll Dice");
 
     /* ───── client internals ───── */
-    private final String           myName;
+    private final String myName;
     private final ClientConnection conn;
 
     /* =================================================================== */
     public MonopolyGUI(String name, String host, int port) throws Exception {
+        System.out.println("🟢 MonopolyGUI constructor called");
         this.myName = name;
 
         /* connection */
@@ -85,6 +88,42 @@ public class MonopolyGUI extends JFrame {
         setVisible(true);
     }
 
+
+    public MonopolyGUI(String name, String host, int port, ClientConnection conn) throws Exception {
+        
+        System.out.println("🟢 MonopolyGUI 2 constructor called");
+
+        this.conn = conn;  // Use the existing, already-authenticated connection
+        this.myName = name;
+        this.conn.setMessageHandler(this::handle);  // Make sure GUI handles future messages
+    
+        setTitle("Monopoly – " + name);
+        setSize(900, 700);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+    
+        JPanel north = new JPanel(new GridLayout(1, 10));
+        JPanel south = new JPanel(new GridLayout(1, 10));
+        JPanel west  = new JPanel(new GridLayout(10, 1));
+        JPanel east  = new JPanel(new GridLayout(10, 1));
+    
+        for (int i = 20; i <= 29; i++) btns.add(addButton(north));
+        for (int i = 9;  i >=  0; i--) btns.add(addButton(south));
+        for (int i = 19; i >= 10; i--) btns.add(addButton(west));
+        for (int i = 30; i <= 39; i++) btns.add(addButton(east));
+    
+        add(north, BorderLayout.NORTH);
+        add(south, BorderLayout.SOUTH);
+        add(west,  BorderLayout.WEST);
+        add(east,  BorderLayout.EAST);
+        add(new JScrollPane(log), BorderLayout.CENTER);
+    
+        JButton roll = new JButton("Roll Dice");
+        roll.addActionListener(e -> conn.send(new RollDiceReq()));
+        add(roll, BorderLayout.PAGE_END);
+    
+        setVisible(true);
+    }
     /* =================================================================== */
     private JButton addButton(JPanel parent) {
         JButton b = new JButton();
@@ -190,9 +229,49 @@ public class MonopolyGUI extends JFrame {
             btn.setText(html.append("</center></html>").toString());
         }
     }
+// public static void main(String[] args) throws Exception {
+//     String username = JOptionPane.showInputDialog("Enter username:");
+//     String password = JOptionPane.showInputDialog("Enter password:");
+//     String name = JOptionPane.showInputDialog("Enter player name");
+//     String host = (args.length > 0) ? args[0] : "localhost";
+//     int port = (args.length > 1) ? Integer.parseInt(args[1]) : 5100;
+//     ClientConnection[] conn = new ClientConnection[1];  // Trick: use array to make it mutable inside lambda
+
+// conn[0] = new ClientConnection(host, port, message -> {
+//     if (message instanceof LoginRes res) {
+//         if (!res.isSuccess()) {
+//             JOptionPane.showMessageDialog(null, "⚠️ Login failed. Starting game anyway.");
+//             // JOptionPane.showMessageDialog(null, "❌ Login failed. Exiting.");
+//             // System.exit(1);
+//         } else {
+//             System.out.println("✅ Login successful.");
+//             try {
+//                 conn[0].send(new JoinGameReq(name));
+//                 SwingUtilities.invokeLater(() -> {
+//                     try {
+//                         MonopolyGUI gui = new MonopolyGUI(name == null ? "Player" : name, host, port, conn[0]);
+//                         conn[0].setMessageHandler(gui::handle);  // ✅ update the message handler to point to GUI
+//                     } catch (Exception e) {
+//                         e.printStackTrace();
+//                     }
+//                 });
+//             } catch (Exception e) {
+//                 e.printStackTrace();
+//             }
+//         }
+//     }
+// });
+
+// conn[0].send(new LoginReq(username, password));
+
+
+
+// }
 
     /* =================================================================== */
     public static void main(String[] args) throws Exception {
+        String username = JOptionPane.showInputDialog("Enter username:");
+        String password = JOptionPane.showInputDialog("Enter password:");
         String name = JOptionPane.showInputDialog("Enter player name");
         String host = (args.length > 0) ? args[0] : "localhost";
         int    port = (args.length > 1) ? Integer.parseInt(args[1]) : 5100;
