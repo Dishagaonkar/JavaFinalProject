@@ -20,3 +20,11 @@ cd client
 javac -cp "../shared/out" -d out (Get-ChildItem -Recurse -Filter \*.java -Path src).FullName
 
 java -cp "out;../shared/out" monopoly.client.MonopolyGUI localhost 5100
+
+$javaFiles = Get-ChildItem -Recurse -Filter \*.java -Path src | ForEach-Object { $\_.FullName }
+
+> > javac -cp ../shared/out -d out $javaFiles
+
+shared
+
+javac -encoding UTF-8 -d out (Get-ChildItem -Recurse -Filter \*.java -Path src).FullName
