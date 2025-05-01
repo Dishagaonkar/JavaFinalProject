@@ -6,7 +6,14 @@ import monopoly.db.DatabaseManager;
 import java.net.*;
 import java.util.*;
 
+import monopoly.net.*;
+import monopoly.db.DatabaseManager;
+
+import java.io.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class GameServer {
+    public static final Map<Socket, String> authenticatedUsers = new ConcurrentHashMap<>();
 
     private static final List<ClientHandler> clients =
             Collections.synchronizedList(new ArrayList<>());

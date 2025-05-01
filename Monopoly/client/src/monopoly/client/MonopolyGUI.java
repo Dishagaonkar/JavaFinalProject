@@ -228,6 +228,42 @@ public class MonopolyGUI extends JFrame {
 
             btn.setText(html.append("</center></html>").toString());
         }
+
+
+    }
+
+    public static void main(String[] args) throws Exception {
+        String username = JOptionPane.showInputDialog("Enter username:");
+        String password = JOptionPane.showInputDialog("Enter password:");
+        String name = JOptionPane.showInputDialog("Enter player name");
+        String host = (args.length > 0) ? args[0] : "localhost";
+        int port = (args.length > 1) ? Integer.parseInt(args[1]) : 5100;
+    
+        ClientConnection[] conn = new ClientConnection[1];  // mutable wrapper
+    
+        // temporary login handler
+        conn[0] = new ClientConnection(host, port, message -> {
+            if (message instanceof LoginRes res) {
+                if (!res.isSuccess()) {
+                    JOptionPane.showMessageDialog(null, "⚠️ Login failed. Starting game anyway.");
+                } else {
+                    System.out.println("✅ Login successful.");
+                    conn[0].send(new JoinGameReq(name));
+                }
+    
+                // ✅ Launch GUI regardless of login success/failure
+                SwingUtilities.invokeLater(() -> {
+                    try {
+                        MonopolyGUI gui = new MonopolyGUI(name == null ? "Player" : name, host, port, conn[0]);
+                        conn[0].setMessageHandler(gui::handle); // switch to GUI handler
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+        });
+    
+        conn[0].send(new LoginReq(username, password));
     }
 // public static void main(String[] args) throws Exception {
 //     String username = JOptionPane.showInputDialog("Enter username:");
@@ -268,13 +304,13 @@ public class MonopolyGUI extends JFrame {
 
 // }
 
-    /* =================================================================== */
-    public static void main(String[] args) throws Exception {
-        String username = JOptionPane.showInputDialog("Enter username:");
-        String password = JOptionPane.showInputDialog("Enter password:");
-        String name = JOptionPane.showInputDialog("Enter player name");
-        String host = (args.length > 0) ? args[0] : "localhost";
-        int    port = (args.length > 1) ? Integer.parseInt(args[1]) : 5100;
-        new MonopolyGUI(name == null ? "Player" : name, host, port);
-    }
+    // /* =================================================================== */
+    // public static void main(String[] args) throws Exception {
+    //     String username = JOptionPane.showInputDialog("Enter username:");
+    //     String password = JOptionPane.showInputDialog("Enter password:");
+    //     String name = JOptionPane.showInputDialog("Enter player name");
+    //     String host = (args.length > 0) ? args[0] : "localhost";
+    //     int    port = (args.length > 1) ? Integer.parseInt(args[1]) : 5100;
+    //     new MonopolyGUI(name == null ? "Player" : name, host, port);
+    // }
 }
