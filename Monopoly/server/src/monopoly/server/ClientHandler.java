@@ -40,6 +40,22 @@ public class ClientHandler implements Runnable {
 
     /* ─────────────────────────────────────────────────────────────── */
     private void handle(Message m) throws IOException {
+
+        if (m instanceof RegisterReq reg) {
+            System.out.println("🟢 RegisterReq from: " + reg.getUsername());
+        
+            boolean ok = DatabaseManager.createUser(reg.getUsername(), reg.getPassword());
+            out.writeObject(new RegisterRes(ok));
+            out.flush();
+        
+            if (ok) {
+                System.out.println(" Registration successful: " + reg.getUsername());
+            } else {
+                System.out.println(" Registration failed (duplicate?): " + reg.getUsername());
+            }
+        
+            return;
+        }
         // ✅ Step 1: Handle LoginReq
         if (m instanceof LoginReq login) {
             System.out.println("🟢 LoginReq from: " + login.getUsername());
