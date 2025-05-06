@@ -2,6 +2,8 @@ package monopoly.client;
 
 import monopoly.client.ClientConnection;
 import monopoly.model.BoardSpace;
+import monopoly.model.Chance;
+import monopoly.model.CommunityChest;
 import monopoly.model.MonopolyBoard;
 import monopoly.model.Player;
 import monopoly.model.Property;
@@ -12,6 +14,7 @@ import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class MonopolyGUI extends JFrame {
     private MonopolyBoard board;
@@ -87,7 +90,11 @@ public class MonopolyGUI extends JFrame {
                 log.append("\n" + gs.lastEvent());
             });
 
-            if (myTurn) maybePromptBuy(gs.currentTurn());
+            if (myTurn) {
+                maybePromptBuy(gs.currentTurn());
+                maybeTriggerCard(gs.currentTurn());
+            }
+
         }
     }
 
@@ -108,6 +115,36 @@ public class MonopolyGUI extends JFrame {
             sb.append(p.getName()).append(" ($").append(p.getMoney()).append(")\n");
         stats.setText(sb.toString());
     }
+
+     private void maybeTriggerCard(int meIdx) {
+        Player me = players.get(meIdx);
+        BoardSpace sq = board.getBoard().get(me.getPosition());
+        if (sq instanceof CommunityChest || sq instanceof Chance) {
+            String[] cards = {
+                "Bank error in your favor. Collect $200.",
+                "Doctor's fees. Pay $50.",
+                "You have won second prize in a beauty contest. Collect $10.",
+                "Pay hospital fees of $100.",
+                "Advance to GO (Collect $200)."
+            };
+            int cardIndex = new Random().nextInt(cards.length);
+            String result = cards[cardIndex];
+            JOptionPane.showMessageDialog(this, "🃏 " + result);
+            log.append("\n[Card]: " + result);
+
+            switch (cardIndex) {
+                case 0 -> me.adjustMoney(200);
+                case 1 -> me.adjustMoney(-50);
+                case 2 -> me.adjustMoney(10);
+                case 3 -> me.adjustMoney(-100);
+                case 4 -> me.move(40 - me.getPosition(), 40); // advance to GO
+            }
+
+            drawBoard();
+            updateStats();
+        }
+    }
+
 
     private int getButtonIndexForTile(int tile) {
         if (tile >= 20 && tile <= 29) return tile - 20;             // Top row
