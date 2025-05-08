@@ -85,8 +85,10 @@ public class ClientHandler implements Runnable {
             push(snapshot());
         }
         else if (m instanceof RollDiceReq) {
-            engine.rollDice(self);
-            GameServer.broadcast(snapshot());
+            engine.rollDice(self);               // update money, event text, etc.
+            GameServer.broadcast(snapshot());    // ① snapshot for the roller
+            engine.advanceTurn();                // bump turn index
+            GameServer.broadcast(snapshot());       // NOW move to next player
         }
         else if (m instanceof BuyPropertyReq b) {
             if (engine.buyProperty(self, b.index()))

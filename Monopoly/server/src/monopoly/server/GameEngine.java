@@ -24,14 +24,21 @@ public class GameEngine {
 
     /* -------- roll dice (only if p is current) -------- */
     public synchronized void rollDice(Player p) {
-        if (!p.equals(players.get(turn))) return;      // ignore out-of-turn rolls
-
+        if (!p.equals(players.get(turn))) return;      // ignore out‑of‑turn rolls
+    
         int r = rnd.nextInt(6) + 1;
         p.move(r, board.getBoard().size());
-
+    
         BoardSpace sq = board.getBoard().get(p.getPosition());
         last = handleEvent(p, sq, r);
-
+    
+        /*  DON'T bump 'turn' here – let ClientHandler do it *after* the
+            snapshot is sent so currentTurn() still points at the player
+            who just rolled. */
+    }
+    
+    /* ---- called by ClientHandler after it broadcasts the snapshot ---- */
+    public synchronized void advanceTurn() {
         turn = (turn + 1) % players.size();
     }
 
