@@ -14,3 +14,10 @@ Start-Process powershell -ArgumentList '-NoExit', '-Command', @"
 cd 'C:\IntroToJava\JavaFinalProject\Monopoly\client'
 java -cp 'out;../shared/out' monopoly.client.MonopolyGUI
 "@
+
+
+Start-Process powershell -ArgumentList '-NoExit', '-Command', @"
+cd 'C:\IntroToJava\JavaFinalProject\Monopoly\client'
+java -cp 'out;../shared/out' monopoly.client.MonopolyGUI
+"@
+
