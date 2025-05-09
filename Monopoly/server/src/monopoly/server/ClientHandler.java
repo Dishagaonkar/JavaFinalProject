@@ -8,7 +8,6 @@ import java.net.Socket;
 import monopoly.db.DatabaseManager;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** One thread per connected client. */
 public class ClientHandler implements Runnable {
 
     private final Socket     socket;
@@ -56,7 +55,7 @@ public class ClientHandler implements Runnable {
         
             return;
         }
-        // ✅ Step 1: Handle LoginReq
+ 
         if (m instanceof LoginReq login) {
             System.out.println("🟢 LoginReq from: " + login.getUsername());
     
@@ -73,22 +72,22 @@ public class ClientHandler implements Runnable {
             return;
         }
     
-        // ✅ Step 2: Block everything else unless authenticated
+ 
         if (!GameServer.authenticatedUsers.containsKey(socket)) {
             System.out.println(" Rejected message from unauthenticated socket");
             return;
         }
     
-        // ✅ Step 3: Game logic follows
+
         if (m instanceof JoinGameReq j) {
             self = engine.addPlayer(j.playerName());
             push(snapshot());
         }
         else if (m instanceof RollDiceReq) {
-            engine.rollDice(self);               // update money, event text, etc.
-            GameServer.broadcast(snapshot());    // ① snapshot for the roller
-            engine.advanceTurn();                // bump turn index
-            GameServer.broadcast(snapshot());       // NOW move to next player
+            engine.rollDice(self);               
+            GameServer.broadcast(snapshot());    
+            engine.advanceTurn();                
+            GameServer.broadcast(snapshot());       
         }
         else if (m instanceof BuyPropertyReq b) {
             if (engine.buyProperty(self, b.index()))
@@ -96,31 +95,15 @@ public class ClientHandler implements Runnable {
         }
     }
    
-    // private void handle(Message m) throws IOException {
-    //     if (m instanceof JoinGameReq j) {
-    //         self = engine.addPlayer(j.playerName());
-    //         push(snapshot());
-    //     }
-    //     else if (m instanceof RollDiceReq) {
-    //         engine.rollDice(self);
-    //         GameServer.broadcast(snapshot());
-    //     }
-    //     else if (m instanceof BuyPropertyReq b) {
-    //         if (engine.buyProperty(self, b.index()))
-    //             GameServer.broadcast(snapshot());
-    //     }
-    // }
-
-    /* ─────────────────────────────────────────────────────────────── */
+ 
     private GameStatePush snapshot() {
         return new GameStatePush(
                 engine.board(),
                 engine.players(),
                 engine.lastEvent(),
-                engine.currentTurn());      // 4-argument ctor
+                engine.currentTurn());     
     }
 
-    /* public so GameServer can call it */
     public void push(GameStatePush s) {
         try { out.reset(); out.writeObject(s); out.flush(); }
         catch (IOException ignored) {}

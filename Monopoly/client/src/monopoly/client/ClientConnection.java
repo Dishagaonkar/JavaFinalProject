@@ -13,13 +13,13 @@ public class ClientConnection {
     out = new ObjectOutputStream(sock.getOutputStream());
     ObjectInputStream in = new ObjectInputStream(sock.getInputStream());
 
-    this.handler = cb; // 💡 Save initial handler
+    this.handler = cb; 
 
     Thread t = new Thread(() -> {
         try (sock) {
             while (true) {
                 Message m = (Message) in.readObject();
-                handler.accept(m);  // 💥 USE THE FIELD, not the local cb
+                handler.accept(m);  
             }
         } catch (Exception e) {
             e.printStackTrace();

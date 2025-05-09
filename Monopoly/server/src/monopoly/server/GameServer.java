@@ -20,7 +20,7 @@ public class GameServer {
 
     public static void broadcast(GameStatePush s) {
         synchronized (clients) {
-            for (ClientHandler ch : clients) ch.push(s);   // push is now public
+            for (ClientHandler ch : clients) ch.push(s);  
         }
     }
 

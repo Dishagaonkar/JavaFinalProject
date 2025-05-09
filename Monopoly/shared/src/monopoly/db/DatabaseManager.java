@@ -12,7 +12,7 @@ public class DatabaseManager {
 
     public static void initializeDatabase() {
         try {
-            Class.forName("org.sqlite.JDBC"); // ✅ load the SQLite driver manually
+            Class.forName("org.sqlite.JDBC"); 
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
             return;
@@ -21,14 +21,13 @@ public class DatabaseManager {
         try (Connection conn = DriverManager.getConnection(URL);
              Statement stmt = conn.createStatement()) {
 
-            // Create users table
             String createUsersTableSQL = "CREATE TABLE IF NOT EXISTS users (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     "username TEXT NOT NULL UNIQUE, " +
                     "password TEXT NOT NULL);";
             stmt.execute(createUsersTableSQL);
 
-            // Create games table
+
             String createGamesTableSQL = "CREATE TABLE IF NOT EXISTS games (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     "winner TEXT NOT NULL);";
@@ -39,7 +38,6 @@ public class DatabaseManager {
         }
     }
 
-    // Record winner
 
     public static boolean createUser(String username, String password) {
 
@@ -58,16 +56,7 @@ public class DatabaseManager {
         e.printStackTrace();
         return false;
     }
-    // try (Connection conn = DriverManager.getConnection(URL);
-    //      PreparedStatement stmt = conn.prepareStatement("INSERT INTO users(username, password) VALUES (?, ?)")) {
 
-    //     stmt.setString(1, username);
-    //     stmt.setString(2, password);
-    //     stmt.executeUpdate();
-    //     return true;
-    // } catch (SQLException e) {
-    //     return false; // username already exists or error
-    // }
 }
 
     public static boolean authenticateUser(String username, String password) {
@@ -84,17 +73,7 @@ public class DatabaseManager {
         e.printStackTrace();
     }
     return false;
-    // try (Connection conn = DriverManager.getConnection(URL);
-    //      PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users WHERE username = ? AND password = ?")) {
 
-    //     stmt.setString(1, username);
-    //     stmt.setString(2, password);
-    //     ResultSet rs = stmt.executeQuery();
-    //     return rs.next();
-    // } catch (SQLException e) {
-    //     e.printStackTrace();
-    //     return false;
-    // }
 }
 
     public static void recordWinner(String playerName) {

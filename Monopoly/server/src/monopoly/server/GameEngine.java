@@ -6,25 +6,25 @@ import java.util.*;
 
 public class GameEngine {
 
-    /* ───────── immutable board & RNG ───────── */
+   
     private final MonopolyBoard board   = new MonopolyBoard();
     private final List<Player>  players = new ArrayList<>();
     private final Random        rnd     = new Random();
 
-    /* ───────── mutable game state ───────── */
-    private int    turn = 0;                 // 0-based index into players
-    private String last = "Server ready.";   // last log/event line
+    
+    private int    turn = 0;                 
+    private String last = "Server ready.";  
 
-    /* -------- add a new player -------- */
+   
     public synchronized Player addPlayer(String name) {
         Player p = new Player(name);
         players.add(p);
         return p;
     }
 
-    /* -------- roll dice (only if p is current) -------- */
+    
     public synchronized void rollDice(Player p) {
-        if (!p.equals(players.get(turn))) return;      // ignore out‑of‑turn rolls
+        if (!p.equals(players.get(turn))) return;      
     
         int r = rnd.nextInt(6) + 1;
         p.move(r, board.getBoard().size());
@@ -32,17 +32,15 @@ public class GameEngine {
         BoardSpace sq = board.getBoard().get(p.getPosition());
         last = handleEvent(p, sq, r);
     
-        /*  DON'T bump 'turn' here – let ClientHandler do it *after* the
-            snapshot is sent so currentTurn() still points at the player
-            who just rolled. */
+
     }
     
-    /* ---- called by ClientHandler after it broadcasts the snapshot ---- */
+   
     public synchronized void advanceTurn() {
         turn = (turn + 1) % players.size();
     }
 
-    /* -------- buy property request -------- */
+   
     public synchronized boolean buyProperty(Player p, int square) {
         BoardSpace sq = board.getBoard().get(square);
         if (!(sq instanceof Property prop))                 return false;
@@ -55,7 +53,7 @@ public class GameEngine {
         return true;
     }
 
-    /* -------- resolve landing event -------- */
+    
     private String handleEvent(Player pl, BoardSpace sq, int roll) {
         if (sq instanceof Property prop) {
             if (!prop.isOwned()) {
@@ -72,7 +70,6 @@ public class GameEngine {
                " and landed on " + sq.getName();
     }
 
-    /* -------- accessors used by ClientHandler -------- */
     public synchronized MonopolyBoard board()      { return board; }
     public synchronized List<Player>  players()    { return players; }
     public synchronized String        lastEvent()  { return last; }
