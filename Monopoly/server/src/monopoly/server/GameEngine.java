@@ -54,7 +54,7 @@ public class GameEngine {
     }
 
     
-    private String handleEvent(Player pl, BoardSpace sq, int roll) {
+        private String handleEvent(Player pl, BoardSpace sq, int roll) {
         if (sq instanceof Property prop) {
             if (!prop.isOwned()) {
                 return pl.getName() + " may buy " + prop.getName();
@@ -66,6 +66,29 @@ public class GameEngine {
                        " rent to " + prop.getOwner().getName();
             }
         }
+
+        if (sq instanceof Chance || sq instanceof CommunityChest) {
+            String[] cards = {
+                "Bank error in your favor. Collect $200.",
+                "Doctor's fees. Pay $50.",
+                "You have won second prize in a beauty contest. Collect $10.",
+                "Pay hospital fees of $100."
+            };
+
+            int index = rnd.nextInt(cards.length);
+            String card = cards[index];
+
+            switch (index) {
+                case 0 -> pl.adjustMoney(200);
+                case 1 -> pl.adjustMoney(-50);
+                case 2 -> pl.adjustMoney(10);
+                case 3 -> pl.adjustMoney(-100);
+            }
+
+            last = pl.getName() + " drew a card on " + sq.getName() + ": " + card;
+            return last;
+        }
+
         return pl.getName() + " rolled " + roll +
                " and landed on " + sq.getName();
     }

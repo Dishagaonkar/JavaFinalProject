@@ -24,6 +24,7 @@ public class MonopolyGUI extends JFrame {
     private final JTextArea stats = new JTextArea(5, 14);
     private final List<JButton> btns = new ArrayList<>();
     private final JButton rollBtn = new JButton("Roll Dice");
+    private final java.util.Set<String> alreadyDrewCard = new java.util.HashSet<>();
 
     private final String myName;
     private final ClientConnection conn;
@@ -77,7 +78,7 @@ public class MonopolyGUI extends JFrame {
         return b;
     }
 
-    private void handle(Message msg) {
+        private void handle(Message msg) {
         if (msg instanceof GameStatePush gs) {
             board = gs.board();
             players = gs.players();
@@ -93,9 +94,11 @@ public class MonopolyGUI extends JFrame {
 
             if (myTurn) {
                 maybePromptBuy(gs.currentTurn());
-                maybeTriggerCard(gs.currentTurn());
+                String lastEvent = gs.lastEvent();
+                    if (lastEvent.contains("drew a card")) {
+                         JOptionPane.showMessageDialog(this, lastEvent, "Card Drawn", JOptionPane.INFORMATION_MESSAGE);
+    }
             }
-
         }
     }
 
@@ -117,34 +120,32 @@ public class MonopolyGUI extends JFrame {
         stats.setText(sb.toString());
     }
 
-     private void maybeTriggerCard(int meIdx) {
-        Player me = players.get(meIdx);
-        BoardSpace sq = board.getBoard().get(me.getPosition());
-        if (sq instanceof CommunityChest || sq instanceof Chance) {
-            String[] cards = {
-                "Bank error in your favor. Collect $200.",
-                "Doctor's fees. Pay $50.",
-                "You have won second prize in a beauty contest. Collect $10.",
-                "Pay hospital fees of $100.",
-                "Advance to GO (Collect $200)."
-            };
-            int cardIndex = new Random().nextInt(cards.length);
-            String result = cards[cardIndex];
-            JOptionPane.showMessageDialog(this, "🃏 " + result);
-            log.append("\n[Card]: " + result);
+    //  private void maybeTriggerCard(int meIdx) {
+    //     Player me = players.get(meIdx);
+    //     BoardSpace sq = board.getBoard().get(me.getPosition());
+    //     if (sq instanceof CommunityChest || sq instanceof Chance) {
+    //         String[] cards = {
+    //             "Bank error in your favor. Collect $200.",
+    //             "Doctor's fees. Pay $50.",
+    //             "You have won second prize in a beauty contest. Collect $10.",
+    //             "Pay hospital fees of $100.",
+    //         };
+    //         int cardIndex = new Random().nextInt(cards.length);
+    //         String result = cards[cardIndex];
+    //         JOptionPane.showMessageDialog(this, "🃏 " + result);
+    //         log.append("\n[Card]: " + result);
 
-            switch (cardIndex) {
-                case 0 -> me.adjustMoney(200);
-                case 1 -> me.adjustMoney(-50);
-                case 2 -> me.adjustMoney(10);
-                case 3 -> me.adjustMoney(-100);
-                case 4 -> me.move(40 - me.getPosition(), 40); // advance to GO
-            }
+    //         switch (cardIndex) {
+    //             case 0 -> me.adjustMoney(200);
+    //             case 1 -> me.adjustMoney(-50);
+    //             case 2 -> me.adjustMoney(10);
+    //             case 3 -> me.adjustMoney(-100);
+    //         }
 
-            drawBoard();
-            updateStats();
-        }
-    }
+    //         drawBoard();
+    //         updateStats();
+    //     }
+    // }
 
     private void checkBankruptcy() {
         for (Player p : players) {
