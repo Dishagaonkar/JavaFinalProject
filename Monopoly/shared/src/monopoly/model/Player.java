@@ -56,7 +56,8 @@ public class Player implements Serializable {
 
     // === Money ===
     public void adjustMoney(int amt) {
-        money += amt;
+        
+        money  = money + amt;
         if (money < 0) bankrupt = true;
     }
 

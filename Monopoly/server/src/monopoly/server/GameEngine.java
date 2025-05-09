@@ -31,6 +31,7 @@ public class GameEngine {
     
         BoardSpace sq = board.getBoard().get(p.getPosition());
         last = handleEvent(p, sq, r);
+        
     
 
     }
