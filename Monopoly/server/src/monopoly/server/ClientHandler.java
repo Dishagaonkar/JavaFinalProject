@@ -65,20 +65,26 @@ public class ClientHandler implements Runnable {
             self = engine.addPlayer(j.playerName());
             push(snapshot(true));                 // initial state
         }
+else if (m instanceof RollDiceReq) {
+    engine.rollDice(self);                // updates lastEvent
+    GameServer.broadcast(snapshot(true)); // ① with event
 
-        else if (m instanceof RollDiceReq) {
-            engine.rollDice(self);                // updates lastEvent
-            GameServer.broadcast(snapshot(true)); // ① with event
+    engine.advanceTurn();                 // bump turn
+    GameServer.broadcast(snapshot(false));// ② without event
+}
 
-            engine.advanceTurn();                 // bump turn
-            GameServer.broadcast(snapshot(false));// ② without event
-        }
+else if (m instanceof DeclinePropertyReq d) {
+    engine.declineProperty(self, d.getPosition());   // optional: record it
+    GameServer.broadcast(snapshot(true));            // show "declined" event
+}
 
-        else if (m instanceof BuyPropertyReq b) {
-            if (engine.buyProperty(self, b.index()))
-                GameServer.broadcast(snapshot(true)); // purchase event once
-        }
-    }
+else if (m instanceof BuyPropertyReq b) {
+    if (engine.buyProperty(self, b.index()))
+        GameServer.broadcast(snapshot(true)); // purchase event once
+}        // show "declined" event                           // 🟢 advance turn!
+
+}
+    
 
     /* ─────────────────────────────────────────────────────────────── */
     /** snapshot(true) includes lastEvent; snapshot(false) sends ""  */

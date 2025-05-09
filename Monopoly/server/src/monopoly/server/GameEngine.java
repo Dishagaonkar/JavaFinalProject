@@ -60,12 +60,21 @@ public class GameEngine {
             if (!prop.isOwned()) {
                 return pl.getName() + " may buy " + prop.getName();
             }
-            if (prop.getOwner() != pl) {
+            else if (prop.getOwner() != pl) {
                 pl.adjustMoney(-prop.getRent());
                 prop.getOwner().adjustMoney(prop.getRent());
                 return pl.getName() + " paid $" + prop.getRent() +
                        " rent to " + prop.getOwner().getName();
             }
+            else{
+                return pl.getName() + " declined " + prop.getName() + " earlier.";
+            }
+
+        }
+
+        if (sq instanceof Tax tax) {
+            pl.adjustMoney(-tax.getAmount());
+            return pl.getName() + " paid tax of $" + tax.getAmount();
         }
 
         if (sq instanceof Chance || sq instanceof CommunityChest) {
@@ -93,7 +102,12 @@ public class GameEngine {
         return pl.getName() + " rolled " + roll +
                " and landed on " + sq.getName();
     }
-
+    public synchronized void declineProperty(Player p, int square) {
+    BoardSpace sq = board.getBoard().get(square);
+    if (sq instanceof Property prop && !prop.isOwned()) {
+        last = p.getName() + " declined to buy " + prop.getName();
+    }
+}
     public synchronized MonopolyBoard board()      { return board; }
     public synchronized List<Player>  players()    { return players; }
     public synchronized String        lastEvent()  { return last; }

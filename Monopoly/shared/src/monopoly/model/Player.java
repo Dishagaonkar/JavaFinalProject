@@ -29,6 +29,7 @@ public class Player implements Serializable {
     private int pos = 0;
     private int money = 1500;
     private final Set<Property> owned = new HashSet<>();
+    private final Set<Integer> declinedProperties = new HashSet<>();
 
     // 🚔 Jail state
     private boolean inJail = false;
@@ -40,6 +41,14 @@ public class Player implements Serializable {
     public Player(String name) {
         this.name = name;
     }
+
+    public void declineProperty(int position) {
+    declinedProperties.add(position);
+}
+
+public boolean hasDeclined(int position) {
+    return declinedProperties.contains(position);
+}
 
     // === Position ===
     public void move(int steps, int boardSize) {

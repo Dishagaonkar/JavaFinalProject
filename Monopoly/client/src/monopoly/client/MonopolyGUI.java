@@ -13,8 +13,10 @@ import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 public class MonopolyGUI extends JFrame {
     private MonopolyBoard board;
@@ -24,7 +26,8 @@ public class MonopolyGUI extends JFrame {
     private final JTextArea stats = new JTextArea(5, 14);
     private final List<JButton> btns = new ArrayList<>();
     private final JButton rollBtn = new JButton("Roll Dice");
-    private final java.util.Set<String> alreadyDrewCard = new java.util.HashSet<>();
+    private final Set<Integer> declinedBuys = new HashSet<>();
+
 
     private final String myName;
     private final ClientConnection conn;
@@ -82,7 +85,12 @@ public class MonopolyGUI extends JFrame {
         if (msg instanceof GameStatePush gs) {
             board = gs.board();
             players = gs.players();
+            String lastEvent = gs.lastEvent();
             boolean myTurn = players.get(gs.currentTurn()).getName().equals(myName);
+
+            if (myTurn && lastEvent.contains("rolled")) {
+    declinedBuys.clear();  // ✅ Clear once per actual new roll/turn
+}
             rollBtn.setEnabled(myTurn);
 
             SwingUtilities.invokeLater(() -> {
@@ -93,25 +101,48 @@ public class MonopolyGUI extends JFrame {
             });
 
             if (myTurn) {
-                maybePromptBuy(gs.currentTurn());
-                String lastEvent = gs.lastEvent();
-                    if (lastEvent.contains("drew a card")) {
-                         JOptionPane.showMessageDialog(this, lastEvent, "Card Drawn", JOptionPane.INFORMATION_MESSAGE);
+                
+    maybePromptBuy(gs.currentTurn());
+
+    lastEvent = gs.lastEvent();
+    if (lastEvent.contains("drew a card")) {
+        JOptionPane.showMessageDialog(this, lastEvent, "Card Drawn", JOptionPane.INFORMATION_MESSAGE);
     }
+
             }
         }
     }
 
-    private void maybePromptBuy(int meIdx) {
-        Player me = players.get(meIdx);
-        BoardSpace sq = board.getBoard().get(me.getPosition());
-        if (!(sq instanceof Property p)) return;
-        if (p.isOwned() || me.getMoney() < p.getRent()) return;
+    
 
-        int choice = JOptionPane.showConfirmDialog(this, myName + ": Buy " + p.getName() + " for $" + p.getRent() + "?", "Buy Property", JOptionPane.YES_NO_OPTION);
-        if (choice == JOptionPane.YES_OPTION)
-            conn.send(new BuyPropertyReq(me.getPosition()));
+
+
+
+    private void maybePromptBuy(int meIdx) {
+    Player me = players.get(meIdx);
+    int pos = me.getPosition();
+
+    // Skip if this property was already declined this turn
+    if (declinedBuys.contains(pos)) return;
+
+    BoardSpace sq = board.getBoard().get(pos);
+    if (!(sq instanceof Property p)) return;
+    if (p.isOwned() || me.getMoney() < p.getRent()) return;
+
+    int choice = JOptionPane.showConfirmDialog(
+        this,
+        myName + ": Buy " + p.getName() + " for $" + p.getRent() + "?",
+        "Buy Property",
+        JOptionPane.YES_NO_OPTION
+    );
+
+    if (choice == JOptionPane.YES_OPTION) {
+        conn.send(new BuyPropertyReq(pos));
+    } else {
+        declinedBuys.add(pos); // ✅ Remember that we declined this spot
+        conn.send(new DeclinePropertyReq(pos));
     }
+}
 
     private void updateStats() {
         StringBuilder sb = new StringBuilder();
