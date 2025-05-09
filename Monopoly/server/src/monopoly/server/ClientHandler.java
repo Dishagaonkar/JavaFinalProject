@@ -5,8 +5,8 @@ import monopoly.net.*;
 
 import java.io.*;
 import java.net.Socket;
+
 import monopoly.db.DatabaseManager;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientHandler implements Runnable {
 
@@ -19,7 +19,8 @@ public class ClientHandler implements Runnable {
     private Player self;
 
     public ClientHandler(Socket s, GameEngine e) {
-        socket = s; engine = e;
+        socket = s;
+        engine = e;
     }
 
     /* ─────────────────────────────────────────────────────────────── */
@@ -40,70 +41,59 @@ public class ClientHandler implements Runnable {
     /* ─────────────────────────────────────────────────────────────── */
     private void handle(Message m) throws IOException {
 
+        /* ---------- registration / login ---------- */
         if (m instanceof RegisterReq reg) {
-            System.out.println("🟢 RegisterReq from: " + reg.getUsername());
-        
             boolean ok = DatabaseManager.createUser(reg.getUsername(), reg.getPassword());
             out.writeObject(new RegisterRes(ok));
             out.flush();
-        
-            if (ok) {
-                System.out.println(" Registration successful: " + reg.getUsername());
-            } else {
-                System.out.println(" Registration failed (duplicate?): " + reg.getUsername());
-            }
-        
             return;
         }
- 
+
         if (m instanceof LoginReq login) {
-            System.out.println("🟢 LoginReq from: " + login.getUsername());
-    
             boolean ok = DatabaseManager.authenticateUser(login.getUsername(), login.getPassword());
             out.writeObject(new LoginRes(ok));
             out.flush();
-    
-            if (ok) {
-                GameServer.authenticatedUsers.put(socket, login.getUsername());
-                System.out.println(" Authenticated: " + login.getUsername());
-            } else {
-                System.out.println(" Login failed: " + login.getUsername());
-            }
+            if (ok) GameServer.authenticatedUsers.put(socket, login.getUsername());
             return;
         }
-    
- 
-        if (!GameServer.authenticatedUsers.containsKey(socket)) {
-            System.out.println(" Rejected message from unauthenticated socket");
-            return;
-        }
-    
 
+        /* reject anything else until authenticated */
+        if (!GameServer.authenticatedUsers.containsKey(socket)) return;
+
+        /* ---------- game‑play messages ---------- */
         if (m instanceof JoinGameReq j) {
             self = engine.addPlayer(j.playerName());
-            push(snapshot());
+            push(snapshot(true));                 // initial state
         }
+
         else if (m instanceof RollDiceReq) {
-            engine.rollDice(self);               
-            GameServer.broadcast(snapshot());    
-            engine.advanceTurn();                
-            GameServer.broadcast(snapshot());       
+            engine.rollDice(self);                // updates lastEvent
+            GameServer.broadcast(snapshot(true)); // ① with event
+
+            engine.advanceTurn();                 // bump turn
+            GameServer.broadcast(snapshot(false));// ② without event
         }
+
         else if (m instanceof BuyPropertyReq b) {
             if (engine.buyProperty(self, b.index()))
-                GameServer.broadcast(snapshot());
+                GameServer.broadcast(snapshot(true)); // purchase event once
         }
     }
-   
- 
-    private GameStatePush snapshot() {
+
+    /* ─────────────────────────────────────────────────────────────── */
+    /** snapshot(true) includes lastEvent; snapshot(false) sends ""  */
+    private GameStatePush snapshot(boolean includeEvent) {
         return new GameStatePush(
                 engine.board(),
                 engine.players(),
-                engine.lastEvent(),
-                engine.currentTurn());     
+                includeEvent ? engine.lastEvent() : "",
+                engine.currentTurn());
     }
 
+    /** Default = include event (handy for legacy calls). */
+    private GameStatePush snapshot() { return snapshot(true); }
+
+    /* ─────────────────────────────────────────────────────────────── */
     public void push(GameStatePush s) {
         try { out.reset(); out.writeObject(s); out.flush(); }
         catch (IOException ignored) {}
