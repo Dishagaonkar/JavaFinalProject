@@ -42,30 +42,59 @@ public class DatabaseManager {
     // Record winner
 
     public static boolean createUser(String username, String password) {
-    try (Connection conn = DriverManager.getConnection(URL);
-         PreparedStatement stmt = conn.prepareStatement("INSERT INTO users(username, password) VALUES (?, ?)")) {
+
+        try (Connection conn = DriverManager.getConnection(URL);
+         PreparedStatement stmt = conn.prepareStatement("INSERT INTO users (username, password) VALUES (?, ?)")) {
+
+        byte[] salt = PasswordUtils.generateSalt();
+        String hashed = PasswordUtils.hashPassword(password, salt);
 
         stmt.setString(1, username);
-        stmt.setString(2, password);
+        stmt.setString(2, hashed);
         stmt.executeUpdate();
         return true;
-    } catch (SQLException e) {
-        return false; // username already exists or error
-    }
-}
 
-    public static boolean authenticateUser(String username, String password) {
-    try (Connection conn = DriverManager.getConnection(URL);
-         PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users WHERE username = ? AND password = ?")) {
-
-        stmt.setString(1, username);
-        stmt.setString(2, password);
-        ResultSet rs = stmt.executeQuery();
-        return rs.next();
-    } catch (SQLException e) {
+    } catch (Exception e) {
         e.printStackTrace();
         return false;
     }
+    // try (Connection conn = DriverManager.getConnection(URL);
+    //      PreparedStatement stmt = conn.prepareStatement("INSERT INTO users(username, password) VALUES (?, ?)")) {
+
+    //     stmt.setString(1, username);
+    //     stmt.setString(2, password);
+    //     stmt.executeUpdate();
+    //     return true;
+    // } catch (SQLException e) {
+    //     return false; // username already exists or error
+    // }
+}
+
+    public static boolean authenticateUser(String username, String password) {
+        try (Connection conn = DriverManager.getConnection(URL);
+         PreparedStatement stmt = conn.prepareStatement("SELECT password FROM users WHERE username = ?")) {
+
+        stmt.setString(1, username);
+        ResultSet rs = stmt.executeQuery();
+        if (rs.next()) {
+            String storedHash = rs.getString("password");
+            return PasswordUtils.verifyPassword(password, storedHash);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return false;
+    // try (Connection conn = DriverManager.getConnection(URL);
+    //      PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users WHERE username = ? AND password = ?")) {
+
+    //     stmt.setString(1, username);
+    //     stmt.setString(2, password);
+    //     ResultSet rs = stmt.executeQuery();
+    //     return rs.next();
+    // } catch (SQLException e) {
+    //     e.printStackTrace();
+    //     return false;
+    // }
 }
 
     public static void recordWinner(String playerName) {
