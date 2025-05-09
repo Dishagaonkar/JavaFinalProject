@@ -88,6 +88,7 @@ public class MonopolyGUI extends JFrame {
                 drawBoard();
                 updateStats();
                 log.append("\n" + gs.lastEvent());
+                checkBankruptcy();
             });
 
             if (myTurn) {
@@ -142,6 +143,16 @@ public class MonopolyGUI extends JFrame {
 
             drawBoard();
             updateStats();
+        }
+    }
+
+    private void checkBankruptcy() {
+        for (Player p : players) {
+            if (p.getName().equals(myName) && p.getMoney() < 0) {
+                JOptionPane.showMessageDialog(this, "You are bankrupt and have lost the game.", "Bankruptcy", JOptionPane.ERROR_MESSAGE);
+                rollBtn.setEnabled(false);
+                break;
+            }
         }
     }
 
